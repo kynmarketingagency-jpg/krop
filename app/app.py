@@ -38,12 +38,19 @@ companies = (pd.read_csv(DATA / "companies.csv") if (DATA / "companies.csv").exi
 # Prefer diet-specific mapping file, fall back to legacy name if present
 _mapping_diet = DATA / "mapping_diet.csv"
 _mapping_legacy = DATA / "mapping.csv"
+mapping_name = None
 if _mapping_diet.exists():
     mapping = pd.read_csv(_mapping_diet)
+    mapping_name = "mapping_diet.csv"
 elif _mapping_legacy.exists():
     mapping = pd.read_csv(_mapping_legacy)
+    mapping_name = "mapping.csv"
 else:
     mapping = pd.DataFrame()
+    mapping_name = "none"
+
+# Optional: global issues library (crop_issue.csv)
+crop_issues = (pd.read_csv(DATA / "crop_issue.csv") if (DATA / "crop_issue.csv").exists() else pd.DataFrame())
 
 # --- Page title ---
 st.set_page_config(page_title="Krop Explorer", layout="wide")
@@ -238,6 +245,36 @@ def confidence_from_counts(counts_dict):
         return "Medium"
     return "Low"
 
+# ---- Extra helpers for curated meals & issues ----
+def issues_for_crops(crops):
+    """Return rows from crop_issue.csv whose crop list overlaps with provided crops."""
+    if 'crop_issues' not in globals() or crop_issues is None or crop_issues.empty:
+        return pd.DataFrame()
+    want = {c.strip().lower() for c in crops if isinstance(c, str) and c.strip()}
+    df = crop_issues.copy()
+    if "crop" not in df.columns:
+        return pd.DataFrame()
+    def matches(row_crop):
+        parts = [p.strip().lower() for p in str(row_crop).replace(";", "|").split("|") if p.strip()]
+        return any(p in want for p in parts)
+    mask = df["crop"].map(matches)
+    cols = [c for c in ["crop","issue_type","description","country","year","source"] if c in df.columns]
+    return df[mask][cols].sort_values(["year"], ascending=[False])
+
+# Curated checklist for Nigeria (meal -> underlying GMO-relevant crops)
+CURATED_NG = [
+    ("Ogi / pap (akamu)", "maize"),
+    ("Moi-moi (steamed bean pudding)", "cowpea"),
+    ("Akara (bean fritter)", "cowpea"),
+    ("Jollof rice (with vegetable oil)", "soy|cottonseed|maize"),
+    ("Fried rice (with chicken)", "maize|soy"),
+    ("Chicken (meat)", "maize|soy"),
+    ("Eggs", "maize|soy"),
+    ("Soy milk / soybean beverage", "soy"),
+    ("Tofu / soy-based foods", "soy"),
+    ("Suya (spiced beef)", "maize|soy"),
+]
+
 st.markdown("### Export")
 
 # 1) filtered countries (from sidebar filters)
@@ -323,13 +360,35 @@ st.markdown("### Diet & Prediction (Beta)")
 if 'mapping' not in globals():
     mapping = pd.DataFrame()
 country_map = get_country_mapping(mapping, pick) if not mapping.empty else pd.DataFrame()
+# Debug summary for mapping
+with st.expander("⛏️ Mapping debug", expanded=False):
+    st.write("Data folder:", str(DATA))
+    st.write("Using file:", mapping_name)
+    st.write("Total rows loaded:", 0 if mapping is None else len(mapping))
+    st.write("Rows matching country/global:", 0 if country_map is None else len(country_map))
+    if mapping_name != "none":
+        st.write("Sample of loaded mapping:")
+        st.dataframe(mapping.head(20), use_container_width=True)
 if country_map.empty:
     st.info("No mapping_diet.csv (or mapping.csv) found or it has missing columns. Add a mapping file to enable the checklist (columns like food,crop,use,country_or_region,source).")
 else:
     # Build a checklist of foods for this country (or global)
-    foods_list = sorted(country_map["food"].dropna().unique().tolist())
+    st.caption(f"Mapping source: **{mapping_name}** • foods available for {pick}: {len(country_map)}")
+
+    # Choose data source: curated list for Nigeria, otherwise mapping file
+    use_curated = (pick.strip().lower() == "nigeria")
+    meal_to_crops = {}
+    if use_curated:
+        for name, cropspec in CURATED_NG:
+            meal_to_crops[name] = cropspec
+        foods_list = list(meal_to_crops.keys())
+    else:
+        foods_list = sorted(country_map["food"].dropna().unique().tolist())
+        for _, r in country_map.iterrows():
+            meal_to_crops.setdefault(r["food"], r["crop"])
+
     if not foods_list:
-        st.info("We couldn't find any foods in mapping_diet.csv (or mapping.csv) for this country.")
+        st.info("We couldn't find any foods for this country.")
     else:
         st.caption("Tick everything you ate today. This will map foods → crops and show evidence.")
         cols = st.columns(3)
@@ -338,16 +397,30 @@ else:
             with cols[i % 3]:
                 if st.checkbox(food, key=f"food_chk_{i}"):
                     selected_foods.append(food)
+
         if selected_foods:
-            sel = country_map[country_map["food"].isin(selected_foods)].copy()
-            # Collect crops from selection
-            crops_sel = sel["crop"].dropna().str.lower().unique().tolist()
-            ev = evidence_for_crops(crops_sel, pick)
+            # Aggregate crops across all selected foods (for quick export/evidence pulls)
+            if use_curated:
+                crops_sel = sorted({c for f in selected_foods for c in re.split(r"[|,]", meal_to_crops.get(f, "")) if c})
+                sel = pd.DataFrame([{"food": f, "crop": c.strip(), "use": ("human" if f.lower() in ["ogi / pap (akamu)","soy milk / soybean beverage","tofu / soy-based foods","moi-moi (steamed bean pudding)","akara (bean fritter)","jollof rice (with vegetable oil)"] else "human|animal"), "where": "Nigeria", "source": ""} for f in selected_foods for c in re.split(r"[|,]", meal_to_crops.get(f, "")) if c.strip()])
+            else:
+                sel = country_map[country_map["food"].isin(selected_foods)].copy()
+                crops_sel = sel["crop"].dropna().str.lower().unique().tolist()
+
+            ev = evidence_for_crops([c.lower() for c in crops_sel], pick)
+
             # Show a compact evidence summary per food
             for f in selected_foods:
-                block = sel[sel["food"]==f]
-                crops_for_food = sorted(block["crop"].unique().tolist())
-                use_kinds = ", ".join(sorted(block["use"].str.lower().unique().tolist()))
+                if use_curated:
+                    crops_for_food = [c.strip() for c in re.split(r"[|,]", meal_to_crops.get(f, "")) if c.strip()]
+                    use_kinds = ("human" if f.lower() in ["ogi / pap (akamu)","soy milk / soybean beverage","tofu / soy-based foods","moi-moi (steamed bean pudding)","akara (bean fritter)","jollof rice (with vegetable oil)"] else "human|animal")
+                    srcs = []
+                else:
+                    block = sel[sel["food"]==f]
+                    crops_for_food = sorted(block["crop"].unique().tolist())
+                    use_kinds = ", ".join(sorted(block["use"].str.lower().unique().tolist()))
+                    srcs = block["source"].dropna().unique().tolist()
+
                 # counts for confidence
                 counts = {
                     "policies_local": len(ev["policies_local"][ev["policies_local"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])]) if isinstance(ev["policies_local"], pd.DataFrame) and not ev["policies_local"].empty else 0,
@@ -356,49 +429,89 @@ else:
                     "incidents": len(ev["incidents"][ev["incidents"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])]) if isinstance(ev["incidents"], pd.DataFrame) and not ev["incidents"].empty else 0,
                 }
                 conf = confidence_from_counts(counts)
+
                 with st.expander(f"🍽️ {f} → {', '.join(crops_for_food)}  •  use: {use_kinds}  •  confidence: {conf}"):
-                    # Sources from mapping rows
-                    srcs = block["source"].dropna().unique().tolist()
+                    # Mapping sources (if any)
                     if srcs:
                         st.markdown("**Mapping sources:**")
                         for surl in srcs[:10]:
                             st.markdown(f"- {surl}")
+
                     # Local policies/bans
                     if not ev["policies_local"].empty:
                         st.markdown("**Local policies:**")
-                        st.dataframe(ev["policies_local"][ev["policies_local"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][["crop","policy_type","decision","year","source"]].sort_values("year", ascending=False), use_container_width=True)
+                        st.dataframe(
+                            ev["policies_local"][ev["policies_local"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][["crop","policy_type","decision","year","source","notes"] if "notes" in ev["policies_local"].columns else ["crop","policy_type","decision","year","source"]].sort_values("year", ascending=False),
+                            use_container_width=True
+                        )
                     if not ev["bans_local"].empty:
                         st.markdown("**Local bans/moratoria:**")
-                        st.dataframe(ev["bans_local"][ev["bans_local"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][["crop","type","scope","year","source"]].sort_values("year", ascending=False), use_container_width=True)
+                        st.dataframe(
+                            ev["bans_local"][ev["bans_local"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][["crop","type","scope","year","source"]].sort_values("year", ascending=False),
+                            use_container_width=True
+                        )
+
+                    # Issues observed in other countries (from crop_issue.csv)
+                    iss = issues_for_crops(crops_for_food)
+                    if not iss.empty:
+                        st.markdown("**Issues observed in other countries:**")
+                        st.dataframe(iss, use_container_width=True)
+
                     # Studies & incidents (global)
                     if not ev["studies"].empty:
                         st.markdown("**Studies (global, filtered by crop):**")
-                        st.dataframe(ev["studies"][ev["studies"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][["study_id","crop","focus","findings","year","source"]].sort_values("year", ascending=False), use_container_width=True)
+                        st.dataframe(
+                            ev["studies"][ev["studies"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][["study_id","crop","focus","findings","year","source"]].sort_values("year", ascending=False),
+                            use_container_width=True
+                        )
                     if not ev["incidents"].empty:
                         st.markdown("**Incidents (global, filtered by crop):**")
                         show_cols = [c for c in ["country","crop","year","type","description","source"] if c in ev["incidents"].columns]
-                        st.dataframe(ev["incidents"][ev["incidents"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][show_cols].sort_values(["year"], ascending=[False]), use_container_width=True)
+                        st.dataframe(
+                            ev["incidents"][ev["incidents"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][show_cols].sort_values(["year"], ascending=[False]),
+                            use_container_width=True
+                        )
+
             # Export a flat report
             report_rows = []
-            for _, r in sel.iterrows():
-                c = r["crop"]
-                counts = {
-                    "policies_local": len(ev["policies_local"][ev["policies_local"]["crop"].str.lower()==c.lower()]) if not ev["policies_local"].empty else 0,
-                    "bans_local": len(ev["bans_local"][ev["bans_local"]["crop"].str.lower()==c.lower()]) if not ev["bans_local"].empty else 0,
-                    "studies": len(ev["studies"][ev["studies"]["crop"].str.lower()==c.lower()]) if not ev["studies"].empty else 0,
-                    "incidents": len(ev["incidents"][ev["incidents"]["crop"].str.lower()==c.lower()]) if not ev["incidents"].empty else 0,
-                }
-                report_rows.append({
-                    "country": pick,
-                    "food": r["food"],
-                    "crop": c,
-                    "use": r["use"],
-                    "confidence": confidence_from_counts(counts),
-                    "mapping_where": r["where"],
-                    "mapping_source": r.get("source",""),
-                })
+            for f in selected_foods:
+                if use_curated:
+                    for c in [x.strip() for x in re.split(r"[|,]", meal_to_crops.get(f, "")) if x.strip()]:
+                        counts = {
+                            "policies_local": len(ev["policies_local"][ev["policies_local"]["crop"].str.lower()==c.lower()]) if not ev["policies_local"].empty else 0,
+                            "bans_local": len(ev["bans_local"][ev["bans_local"]["crop"].str.lower()==c.lower()]) if not ev["bans_local"].empty else 0,
+                            "studies": len(ev["studies"][ev["studies"]["crop"].str.lower()==c.lower()]) if not ev["studies"].empty else 0,
+                            "incidents": len(ev["incidents"][ev["incidents"]["crop"].str.lower()==c.lower()]) if not ev["incidents"].empty else 0,
+                        }
+                        report_rows.append({
+                            "country": pick,
+                            "food": f,
+                            "crop": c,
+                            "use": ("human" if f.lower() in ["ogi / pap (akamu)","soy milk / soybean beverage","tofu / soy-based foods","moi-moi (steamed bean pudding)","akara (bean fritter)","jollof rice (with vegetable oil)"] else "human|animal"),
+                            "confidence": confidence_from_counts(counts),
+                            "mapping_where": pick,
+                            "mapping_source": "",
+                        })
+                else:
+                    for _, r in sel[sel["food"]==f].iterrows():
+                        c = r["crop"]
+                        counts = {
+                            "policies_local": len(ev["policies_local"][ev["policies_local"]["crop"].str.lower()==c.lower()]) if not ev["policies_local"].empty else 0,
+                            "bans_local": len(ev["bans_local"][ev["bans_local"]["crop"].str.lower()==c.lower()]) if not ev["bans_local"].empty else 0,
+                            "studies": len(ev["studies"][ev["studies"]["crop"].str.lower()==c.lower()]) if not ev["studies"].empty else 0,
+                            "incidents": len(ev["incidents"][ev["incidents"]["crop"].str.lower()==c.lower()]) if not ev["incidents"].empty else 0,
+                        }
+                        report_rows.append({
+                            "country": pick,
+                            "food": r["food"],
+                            "crop": c,
+                            "use": r["use"],
+                            "confidence": confidence_from_counts(counts),
+                            "mapping_where": r["where"],
+                            "mapping_source": r.get("source",""),
+                        })
             report_df = pd.DataFrame(report_rows)
             st.markdown("**Export this analysis**")
             download_df_button(report_df, "Download diet analysis", f"{pick}_diet_prediction.csv")
         else:
-            st.caption("Pick one or more foods to see mapped crops and attached evidence.")
+            st.caption("Tick at least one meal to see mapped crops and evidence.")
