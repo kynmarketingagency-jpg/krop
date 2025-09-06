@@ -157,6 +157,7 @@ st.markdown("### Export")
 # 1) filtered countries (from sidebar filters)
 download_df_button(filtered, "Download filtered countries")
 
+
 # 2) this country's bans/policies
 country_bans = bans[bans["country"] == pick] if len(bans) else pd.DataFrame()
 country_policies = policies[policies["country"] == pick] if len(policies) else pd.DataFrame()
@@ -203,44 +204,7 @@ def is_bad_result(result: str, content: str) -> bool:
     content = str(content or "").upper()
     if result.strip().startswith("❌"):
         return True
-    return content in {"BLOCKED", "ERROR", "NOT_FOUND"}
-
-# Load report (created by running: python tools/check_links.py)
-LINK_REPORT = Path(__file__).resolve().parents[1] / "tools" / "output" / "link_report.csv"
-lr = load_link_report(LINK_REPORT)
-
-st.markdown("### Source link health")
-
-if lr.empty:
-    st.info("No link report found yet. Run `python tools/check_links.py` to generate one.")
-else:
-    # Heuristic: match by country name inside the report's 'context' text (case-insensitive)
-    mask_country = lr["context"].fillna("").str.contains(fr"\b{re.escape(pick)}\b", case=False, regex=True)
-    bad_rows = lr[mask_country].copy()
-    bad_rows = bad_rows[ bad_rows.apply(lambda r: is_bad_result(r.get("result",""), r.get("content","")), axis=1) ]
-
-    if bad_rows.empty:
-        st.success(f"All sources for **{pick}** look good ✅")
-    else:
-        st.error(f"{len(bad_rows)} source(s) for **{pick}** need attention.")
-        # Show a compact, helpful view
-        show_cols = [c for c in ["file","row","row_idx","original_url","final_url","result","note","suggestion"] if c in bad_rows.columns]
-        st.dataframe(bad_rows[show_cols].reset_index(drop=True), use_container_width=True)
-
-    # Let users download the full report
-    try:
-        report_bytes = LINK_REPORT.read_bytes()
-        st.download_button(
-            label="Download full link report (CSV)",
-            data=report_bytes,
-            file_name="link_report.csv",
-            mime="text/csv",
-            use_container_width=True,
-        )
-    except Exception:
-        pass
-
-# --- Studies + Incidents + Companies tabs ---
+    return content in {"BLOCKED", "ERROR", "NOT_FOUND"}# --- Studies + Incidents + Companies tabs ---
 st.subheader("Research & Context")
 tab1, tab2, tab3 = st.tabs(["Studies", "Incidents", "Companies"])
 
