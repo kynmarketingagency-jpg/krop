@@ -35,6 +35,15 @@ policies = pd.read_csv(DATA / "reg_policies.csv")
 studies = pd.read_csv(DATA / "studies.csv")
 incidents = (pd.read_csv(DATA / "incidents.csv") if (DATA / "incidents.csv").exists() else pd.DataFrame())
 companies = (pd.read_csv(DATA / "companies.csv") if (DATA / "companies.csv").exists() else pd.DataFrame())
+# Prefer diet-specific mapping file, fall back to legacy name if present
+_mapping_diet = DATA / "mapping_diet.csv"
+_mapping_legacy = DATA / "mapping.csv"
+if _mapping_diet.exists():
+    mapping = pd.read_csv(_mapping_diet)
+elif _mapping_legacy.exists():
+    mapping = pd.read_csv(_mapping_legacy)
+else:
+    mapping = pd.DataFrame()
 
 # --- Page title ---
 st.set_page_config(page_title="Krop Explorer", layout="wide")
@@ -139,7 +148,7 @@ with col2:
         st.info("No bans recorded for this country.")
 
 
-     # ---- CSV download helper ----
+ # ---- CSV download helper ----
 def download_df_button(df: pd.DataFrame, label: str, fname: str | None = None):
     if df is None or df.empty:
         return
@@ -150,6 +159,84 @@ def download_df_button(df: pd.DataFrame, label: str, fname: str | None = None):
         mime="text/csv",
         use_container_width=True,
     )
+
+# ---- Diet & Prediction helpers ----
+def _first_existing_col(df: pd.DataFrame, candidates):
+    for c in candidates:
+        if c in df.columns:
+            return c
+    return None
+def get_mapping_cols(mapping_df: pd.DataFrame):
+    col_food   = _first_existing_col(mapping_df, ["food","product","item","name"])
+    col_crop   = _first_existing_col(mapping_df, ["crop","crops"])
+    col_use    = _first_existing_col(mapping_df, ["use","consumer","audience"])
+    col_region = _first_existing_col(mapping_df, ["country_or_region","country","region"])
+    col_notes  = _first_existing_col(mapping_df, ["notes","note"])
+    col_src    = _first_existing_col(mapping_df, ["source","url","link"])
+    return col_food, col_crop, col_use, col_region, col_notes, col_src
+def get_country_mapping(mapping_df: pd.DataFrame, country: str):
+    if mapping_df is None or mapping_df.empty:
+        return pd.DataFrame()
+    cf, cc, cu, cr, cn, cs = get_mapping_cols(mapping_df)
+    if not all([cf, cc, cu, cr]):
+        return pd.DataFrame()
+    # Filter rows for the selected country, else fall back to region/global rows
+    df = mapping_df.copy()
+    # Normalize text
+    for col in [cf, cc, cu, cr]:
+        df[col] = df[col].astype(str)
+    country_lower = (country or "").lower()
+    mask_country = df[cr].str.lower().eq(country_lower)
+    mask_global  = df[cr].str.lower().isin(["global","world","any","all"])
+    filtered = df[mask_country | mask_global].copy()
+    if filtered.empty:
+        filtered = df.copy()
+    # Standardize output columns
+    out = pd.DataFrame({
+        "food":   filtered[cf].astype(str).str.strip(),
+        "crop":   filtered[cc].astype(str).str.strip(),
+        "use":    filtered[cu].astype(str).str.strip(),
+        "where":  filtered[cr].astype(str).str.strip(),
+        "notes":  filtered[cn] if cn else "",
+        "source": filtered[cs] if cs else "",
+    })
+    # Expand rows where crop contains pipe or comma separated list
+    out = out.assign(crop=out["crop"].str.replace(";", ","))
+    out = out.assign(crop_list=out["crop"].str.split(r"[|,]"))
+    out = out.explode("crop_list")
+    out["crop"] = out["crop_list"].str.strip()
+    out = out.drop(columns=["crop_list"])
+    out = out[out["crop"]!=""]
+    return out.drop_duplicates().reset_index(drop=True)
+def evidence_for_crops(crops_list, country):
+    """Collect simple evidence slices for the chosen crops/country."""
+    crops_list = sorted({c.strip().lower() for c in crops_list if isinstance(c, str) and c.strip()})
+    if not crops_list:
+        return {"policies": pd.DataFrame(), "bans": pd.DataFrame(), "studies": pd.DataFrame(), "incidents": pd.DataFrame()}
+    pol = policies[policies["crop"].str.lower().isin(crops_list)].copy() if len(policies) and "crop" in policies.columns else pd.DataFrame()
+    if len(pol) and "country" in pol.columns:
+        pol_local = pol[pol["country"]==country].copy()
+    else:
+        pol_local = pd.DataFrame()
+    bn = bans[bans["crop"].str.lower().isin(crops_list)].copy() if len(bans) and "crop" in bans.columns else pd.DataFrame()
+    if len(bn) and "country" in bn.columns:
+        bn_local = bn[bn["country"]==country].copy()
+    else:
+        bn_local = pd.DataFrame()
+    stx = studies[studies["crop"].str.lower().isin(crops_list)].copy() if len(studies) and "crop" in studies.columns else pd.DataFrame()
+    inc = incidents[incidents["crop"].str.lower().isin(crops_list)].copy() if len(incidents) and "crop" in incidents.columns else pd.DataFrame()
+    return {"policies_all": pol, "policies_local": pol_local, "bans_all": bn, "bans_local": bn_local, "studies": stx, "incidents": inc}
+def confidence_from_counts(counts_dict):
+    """Very simple confidence heuristic based on how many independent tables have entries."""
+    score = 0
+    if not counts_dict: return "Low"
+    for k,v in counts_dict.items():
+        score += 1 if v>0 else 0
+    if score >= 3:
+        return "High"
+    if score == 2:
+        return "Medium"
+    return "Low"
 
 st.markdown("### Export")
 
@@ -230,3 +317,82 @@ with tab3:
         st.dataframe(c[["company","product","crop","trait","year","notes","source"]].sort_values("year", ascending=False), use_container_width=True)
     else:
         st.info("No companies.csv found.")
+
+# ---- Diet & Prediction (Beta) ----
+st.markdown("### Diet & Prediction (Beta)")
+if 'mapping' not in globals():
+    mapping = pd.DataFrame()
+country_map = get_country_mapping(mapping, pick) if not mapping.empty else pd.DataFrame()
+if country_map.empty:
+    st.info("No mapping_diet.csv (or mapping.csv) found or it has missing columns. Add a mapping file to enable the checklist (columns like food,crop,use,country_or_region,source).")
+else:
+    # Build a checklist of foods for this country (or global)
+    foods_list = sorted(country_map["food"].dropna().unique().tolist())
+    if not foods_list:
+        st.info("We couldn't find any foods in mapping_diet.csv (or mapping.csv) for this country.")
+    else:
+        selected_foods = st.multiselect("Select the foods you ate", foods_list)
+        if selected_foods:
+            sel = country_map[country_map["food"].isin(selected_foods)].copy()
+            # Collect crops from selection
+            crops_sel = sel["crop"].dropna().str.lower().unique().tolist()
+            ev = evidence_for_crops(crops_sel, pick)
+            # Show a compact evidence summary per food
+            for f in selected_foods:
+                block = sel[sel["food"]==f]
+                crops_for_food = sorted(block["crop"].unique().tolist())
+                use_kinds = ", ".join(sorted(block["use"].str.lower().unique().tolist()))
+                # counts for confidence
+                counts = {
+                    "policies_local": len(ev["policies_local"][ev["policies_local"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])]) if isinstance(ev["policies_local"], pd.DataFrame) and not ev["policies_local"].empty else 0,
+                    "bans_local": len(ev["bans_local"][ev["bans_local"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])]) if isinstance(ev["bans_local"], pd.DataFrame) and not ev["bans_local"].empty else 0,
+                    "studies": len(ev["studies"][ev["studies"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])]) if isinstance(ev["studies"], pd.DataFrame) and not ev["studies"].empty else 0,
+                    "incidents": len(ev["incidents"][ev["incidents"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])]) if isinstance(ev["incidents"], pd.DataFrame) and not ev["incidents"].empty else 0,
+                }
+                conf = confidence_from_counts(counts)
+                with st.expander(f"🍽️ {f} → {', '.join(crops_for_food)}  •  use: {use_kinds}  •  confidence: {conf}"):
+                    # Sources from mapping rows
+                    srcs = block["source"].dropna().unique().tolist()
+                    if srcs:
+                        st.markdown("**Mapping sources:**")
+                        for surl in srcs[:10]:
+                            st.markdown(f"- {surl}")
+                    # Local policies/bans
+                    if not ev["policies_local"].empty:
+                        st.markdown("**Local policies:**")
+                        st.dataframe(ev["policies_local"][ev["policies_local"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][["crop","policy_type","decision","year","source"]].sort_values("year", ascending=False), use_container_width=True)
+                    if not ev["bans_local"].empty:
+                        st.markdown("**Local bans/moratoria:**")
+                        st.dataframe(ev["bans_local"][ev["bans_local"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][["crop","type","scope","year","source"]].sort_values("year", ascending=False), use_container_width=True)
+                    # Studies & incidents (global)
+                    if not ev["studies"].empty:
+                        st.markdown("**Studies (global, filtered by crop):**")
+                        st.dataframe(ev["studies"][ev["studies"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][["study_id","crop","focus","findings","year","source"]].sort_values("year", ascending=False), use_container_width=True)
+                    if not ev["incidents"].empty:
+                        st.markdown("**Incidents (global, filtered by crop):**")
+                        show_cols = [c for c in ["country","crop","year","type","description","source"] if c in ev["incidents"].columns]
+                        st.dataframe(ev["incidents"][ev["incidents"]["crop"].str.lower().isin([c.lower() for c in crops_for_food])][show_cols].sort_values(["year"], ascending=[False]), use_container_width=True)
+            # Export a flat report
+            report_rows = []
+            for _, r in sel.iterrows():
+                c = r["crop"]
+                counts = {
+                    "policies_local": len(ev["policies_local"][ev["policies_local"]["crop"].str.lower()==c.lower()]) if not ev["policies_local"].empty else 0,
+                    "bans_local": len(ev["bans_local"][ev["bans_local"]["crop"].str.lower()==c.lower()]) if not ev["bans_local"].empty else 0,
+                    "studies": len(ev["studies"][ev["studies"]["crop"].str.lower()==c.lower()]) if not ev["studies"].empty else 0,
+                    "incidents": len(ev["incidents"][ev["incidents"]["crop"].str.lower()==c.lower()]) if not ev["incidents"].empty else 0,
+                }
+                report_rows.append({
+                    "country": pick,
+                    "food": r["food"],
+                    "crop": c,
+                    "use": r["use"],
+                    "confidence": confidence_from_counts(counts),
+                    "mapping_where": r["where"],
+                    "mapping_source": r.get("source",""),
+                })
+            report_df = pd.DataFrame(report_rows)
+            st.markdown("**Export this analysis**")
+            download_df_button(report_df, "Download diet analysis", f"{pick}_diet_prediction.csv")
+        else:
+            st.caption("Pick one or more foods to see mapped crops and attached evidence.")
