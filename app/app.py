@@ -331,7 +331,13 @@ else:
     if not foods_list:
         st.info("We couldn't find any foods in mapping_diet.csv (or mapping.csv) for this country.")
     else:
-        selected_foods = st.multiselect("Select the foods you ate", foods_list)
+        st.caption("Tick everything you ate today. This will map foods → crops and show evidence.")
+        cols = st.columns(3)
+        selected_foods = []
+        for i, food in enumerate(foods_list):
+            with cols[i % 3]:
+                if st.checkbox(food, key=f"food_chk_{i}"):
+                    selected_foods.append(food)
         if selected_foods:
             sel = country_map[country_map["food"].isin(selected_foods)].copy()
             # Collect crops from selection
