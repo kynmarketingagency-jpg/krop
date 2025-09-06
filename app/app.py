@@ -7,63 +7,6 @@ import plotly.express as px
 from pathlib import Path
 import re
 
-from urllib.parse import quote_plus
-import requests, textwrap, json, time
-
-def gh_headers():
-    return {
-        "Authorization": f"token {st.secrets['GITHUB_TOKEN']}",
-        "Accept": "application/vnd.github+json",
-        "User-Agent": "krop-vote"
-    }
-
-def create_vote_issue(country: str, cultivation: str, products: str) -> tuple[bool, str]:
-    owner = st.secrets.get("GITHUB_OWNER", "kynmarketingagency-jpg")
-    repo  = st.secrets.get("GITHUB_REPO", "krop")
-    url   = f"https://api.github.com/repos/{owner}/{repo}/issues"
-    title = f"[vote] {country} — cultivation:{cultivation} products:{products}"
-    body  = textwrap.dedent(f"""
-    **Auto vote from app**
-
-    - Country: {country}
-    - Cultivation: {cultivation}
-    - Products: {products}
-    """).strip()
-    labels = ["vote", f"country:{country}", f"cultivation:{cultivation}", f"products:{products}"]
-    r = requests.post(url, headers=gh_headers(), json={"title": title, "body": body, "labels": labels}, timeout=15)
-    if r.status_code in (200,201): return True, r.json().get("html_url","")
-    return False, f"{r.status_code}: {r.text[:200]}"
-
-@st.cache_data(ttl=120)
-def get_vote_counts(country: str):
-    """Return counts dict for cultivation/products by label from GitHub Issues."""
-    owner = st.secrets.get("GITHUB_OWNER", "kynmarketingagency-jpg")
-    repo  = st.secrets.get("GITHUB_REPO", "krop")
-    base  = f"https://api.github.com/repos/{owner}/{repo}/issues"
-    def count(q):  # q is the label query
-        params = {"state":"open", "labels": q, "per_page": 1}
-        r = requests.get(base, headers=gh_headers(), params=params, timeout=15)
-        # GitHub doesn’t give total in one shot; do a quick paged count (simple, small scale)
-        if r.status_code!=200: return 0
-        # Use search API for exact counts (faster)
-        sr = requests.get("https://api.github.com/search/issues",
-                          headers=gh_headers(),
-                          params={"q": f"repo:{owner}/{repo} is:issue is:open label:{q}"}, timeout=15)
-        if sr.status_code!=200: return 0
-        return sr.json().get("total_count", 0)
-
-    return {
-        "cultivation": {
-            "Yes": count(f"vote, country:{country}, cultivation:Yes"),
-            "No": count(f"vote, country:{country}, cultivation:No"),
-            "Unsure": count(f"vote, country:{country}, cultivation:Unsure"),
-        },
-        "products": {
-            "Yes": count(f"vote, country:{country}, products:Yes"),
-            "No": count(f"vote, country:{country}, products:No"),
-            "Unsure": count(f"vote, country:{country}, products:Unsure"),
-        }
-    }
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
@@ -240,25 +183,6 @@ with c3:
 # ---- Link health alert for the selected country ----
 # This checks tools/output/link_report.csv (made by tools/check_links.py)
 # and shows a red alert if any sources for this country are broken/blocked.
-
-st.markdown("### Public vote (community pulse)")
-col1, col2 = st.columns(2)
-with col1:
-    cultivation = st.radio("Allow GMO cultivation here?", ["Yes","No","Unsure"], horizontal=True, key="vote_cult")
-with col2:
-    products = st.radio("Allow GMO products in food?", ["Yes","No","Unsure"], horizontal=True, key="vote_prod")
-
-if st.button("Submit vote"):
-    ok, msg = create_vote_issue(pick, cultivation, products)
-    if ok:
-        st.success("Vote submitted. Thank you!")
-        st.cache_data.clear()  # refresh counts
-    else:
-        st.error(f"Could not submit vote: {msg}")
-
-counts = get_vote_counts(pick)
-st.write("**Cultivation**:", counts["cultivation"])
-st.write("**Products**:", counts["products"])
 
 from pathlib import Path
 
