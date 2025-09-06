@@ -1,0 +1,21 @@
+country,region,priority,status,last_updated,notes
+Nigeria,Africa-West,1,done,2025-09-04,"Maize, cowpea, cotton entered"
+South Africa,Africa-South,1,todo,,
+Brazil,Americas-South,1,todo,,
+Argentina,Americas-South,1,todo,,
+United States,Americas-North,1,todo,,
+Canada,Americas-North,1,todo,,
+Philippines,Asia-SE,2,todo,,
+Bangladesh,Asia-S,2,todo,,
+India,Asia-S,2,todo,,
+China,Asia-East,2,todo,,
+Vietnam,Asia-SE,2,todo,,
+Australia,Oceania,2,todo,,
+New Zealand,Oceania,3,todo,,
+Mexico,Americas-North,2,todo,,
+Paraguay,Americas-South,3,todo,,
+Uruguay,Americas-South,3,todo,,
+Kenya,Africa-East,2,todo,,
+Ghana,Africa-West,3,todo,,
+European Union (EU),Europe,1,todo,,"Track EFSA/EU register; cultivation vs food/feed"
+Spain,Europe,2,todo,,"EU member; cultivation history of MON810"

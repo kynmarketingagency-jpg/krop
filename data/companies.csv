@@ -1,0 +1,6 @@
+company,product,crop,trait,year,notes,source
+"Monsanto","Bollgard II","Cotton","Bt insect resistance",2002,"Approved in India, later subject to pricing disputes and lawsuits.","https://www.thehindu.com/news/national/bt-cotton-debate-explained/article65547683.ece"
+"Monsanto","Roundup Ready Soybean (GTS 40-3-2)","Soybean","Herbicide-tolerant",1996,"One of the first GM soybeans approved in the US.","https://www.fda.gov/food/consultation-agency-food-biotechnology/substantial-equivalence-consultation-cfsan-1996-2"
+"Syngenta","Bt11 Maize","Maize","Insect-resistant",1998,"Commercialized in US and EU; faced EU moratorium debates.","https://www.syngenta.com/news-release/syngenta-statement-eu-approval-bt11-maize"
+"Bayer","LibertyLink","Maize","Herbicide-tolerant",2006,"Tolerant to glufosinate; marketed in North America.","https://www.cfs.gov.hk/english/programme/programme_rafs/programme_rafs_fa/programme_rafs_fa_gmf_09_02.html"
+"Corteva (DowDuPont)","Enlist Soybeans","Soybean","Herbicide-tolerant (2,4-D + glyphosate)",2015,"Stacked trait technology adopted in US farms.","https://www.reuters.com/article/us-usa-soybeans-biotech-idUSKBN0P91YF20150715"

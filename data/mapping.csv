@@ -1,0 +1,48 @@
+country,crop,prevalence,notes,source
+Argentina,Cotton (GM share),100%,USDA 2024 reports ~100% GM cotton adoption.,https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Agricultural+Biotechnology+Annual_Buenos+Aires_Argentina_AR2024-0018.pdf
+Argentina,Maize (GM share),99%,USDA 2024 reports 99% GM corn adoption.,https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Agricultural+Biotechnology+Annual_Buenos+Aires_Argentina_AR2024-0018.pdf
+Argentina,Soybean (GM share),100%,USDA 2024 reports ~100% of planted soybean is GM.,https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Agricultural+Biotechnology+Annual_Buenos+Aires_Argentina_AR2024-0018.pdf
+Australia,Canola (GM share),High,GM canola widely grown in several states; adoption high where allowed.,https://www.ogtr.gov.au/sites/default/files/files/2021-06/12_-_genetically_modified_gm_canola_in_australia.pdf
+Australia,Cotton (GM share),>99%,Nearly all Australian cotton carries GM traits.,https://ogtr.gov.au/resources/publications/genetically-modified-gm-cotton-australia
+Australia,Safflower,Limited,GM safflower grown for industrial oil in selected regions since 2018.,https://www.ogtr.gov.au/sites/default/files/2021-09/genetically_modified_gm_safflower_in_australia.pdf
+Bangladesh,Bt brinjal,Growing,Cultivation expanded beyond pilot years under BARI program.,https://pmc.ncbi.nlm.nih.gov/articles/PMC6771371/
+Brazil,Cotton (GM share),~80%,GM cotton adoption continues to expand with stacked Bt/HT traits.,https://apps.fas.usda.gov/gainfiles/2021/2021-0044.pdf
+Brazil,Eucalyptus (H421),Limited,First plantations established after 2015 approval; adoption area still small relative to national forest sector.,https://www.isaaa.org/gmapprovaldatabase/event/default.asp?EventID=312
+Brazil,Maize (GM share),~85%,GM maize adoption widespread; covers most of summer and winter maize plantings.,https://apps.fas.usda.gov/gainfiles/2021/2021-0044.pdf
+Brazil,Soybean (GM share),~95%,Nearly all soybean production is GM; Brazil is world’s largest soybean exporter.,https://apps.fas.usda.gov/gainfiles/2021/2021-0044.pdf
+Brazil,Sugarcane (CTC91087-6),Limited,Cultivated on a limited basis since 2017 approval; adoption growing slowly.,https://www.isaaa.org/gmapprovaldatabase/event/default.asp?EventID=315
+Canada,Canola (GM share),>90%,CFIA reports >90% of canola is GM.,https://inspection.canada.ca/plant-varieties/plants-with-novel-traits/approved-events/eng/1338187634593/1338187758642
+Canada,Maize (GM share),>80%,CFIA reports widespread GM maize.,https://apps.fas.usda.gov/newgainapi/api/report/downloadreportbyfilename?filename=Agricultural+Biotechnology+Annual_Ottawa_Canada_CA2022-0021.pdf
+Canada,Soybean (GM share),>70%,USDA/CFIA report majority GM soybean adoption.,https://apps.fas.usda.gov/newgainapi/api/report/downloadreportbyfilename?filename=Agricultural+Biotechnology+Annual_Ottawa_Canada_CA2022-0021.pdf
+Canada,Sugar beet (GM share),>95%,GM sugar beet widely grown in Canada.,https://inspection.canada.ca/plant-varieties/plants-with-novel-traits/approved-events/eng/1338187634593/1338187758642
+China,Bt cotton,~95%,Adoption of Bt cotton nearly universal in producing regions.,https://www.isaaa.org/resources/publications/briefs/44/executivesummary/default.asp
+China,Soybean (imports),High,China is top importer of GM soy globally.,https://www.isaaa.org/resources/publications/briefs/44/executivesummary/default.asp
+Egypt,Cultivation,None,Cultivation banned; food/feed imports permitted.,https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Biotechnology+and+Other+New+Production+Technologies+Annual_Cairo_Egypt_EG2023-0021.pdf
+Ethiopia,Bt cotton,Limited but growing,Commercialized since 2018; area still modest.,https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Agricultural+Biotechnology+Annual_Addis+Ababa_Ethiopia_10-20-2021
+European Union,Soybean (imports),High,EU is the world’s second-largest importer of GM soy for feed.,https://food.ec.europa.eu/plants/genetically-modified-organisms/gmo-authorisations_en
+India,Bt cotton,~95%,Nearly all cotton cultivated in India is GM Bt cotton.,https://www.isaaa.org/resources/publications/briefs/44/executivesummary/default.asp
+Kenya,Bt cotton,Scaling,Commercial cotton value chain includes Bt varieties since 2020 planting.,https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Agricultural+Biotechnology+Annual_Nairobi_Kenya_KE2023-0007
+Mexico,Cotton (GM share),High,Mexico grows GM cotton at scale; maize/soy rely heavily on imports.,https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Agricultural+Biotechnology+Annual_Mexico+City_Mexico_10-20-2019
+Mexico,Maize (cultivation),Restricted,Cultivation of GM maize restricted/contested; food/feed imports widespread.,https://ustr.gov/sites/default/files/4_U.S.%20Rebuttal%20Submission%20w%20Annexes%20%28fin%29%20%5BPUBLIC%5D.pdf
+New Zealand,Cultivation,None,No commercial GM crop cultivation to date; reform process underway.,https://www.beehive.govt.nz/release/new-zealand-benefit-end-gene-tech-ban
+Nigeria,Cotton (Bt varieties),Limited,Adoption still building since first commercialization in 2018.,https://allianceforscience.org/blog/2018/07/nigeria-commercializes-bt-cotton-first-gmo-crop/
+Nigeria,Cowpea (SAMPEA 20-T),Limited,Rollout and demonstrations reported post-approval; national adoption figures pending.,https://allianceforscience.org/blog/2021/06/nigeria-makes-history-with-gmo-cowpea-rollout/
+Nigeria,Maize (TELA varieties),Unknown,Commercial release in 2024; adoption data not yet measured.,https://www.isaaa.org/kc/cropbiotechupdate/article/default.asp?ID=20598
+Paraguay,Maize (GM share),High,GM maize cultivated; share varies by season.,https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Agricultural+Biotechnology+Annual_Buenos+Aires_Paraguay_8-8-2012.pdf
+Paraguay,Soybean (GM share),~90%+,Very high GM soybean adoption since mid-2000s.,https://apps.fas.usda.gov/gainfiles/200807/146295212.pdf
+Philippines,Bt eggplant,Suspended,Cease-and-desist on commercial propagation per Court of Appeals (Apr 2024).,https://gmanetwork.com/news/topstories/nation/905209/uplb-respects-ca-decision-on-halting-release-of-modified-eggplant/story/
+Philippines,GE corn (GM share),High,Corn GE adoption has been widespread since 2002; exact % varies by year.,https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Agricultural+Biotechnology+Annual_Manila_Philippines_RP2024-0039.pdf
+Philippines,Golden Rice,Suspended,Commercial propagation permit revoked by Court of Appeals (Apr 2024).,https://www.keine-gentechnik.de/fileadmin/news_links/1715343897-urteil-philippinen-ca-g-r-sp-no-00038.pdf
+Portugal,Maize (MON810),Small area,Some cultivation of MON810 maize; much smaller than Spain.,https://cordis.europa.eu/article/id/418015-gmo-cultivation-in-europe
+South Africa,Cotton (GM share),~100%,Cotton adoption reported near 100% by 2019.,https://apps.fas.usda.gov/newgainapi/api/report/downloadreportbyfilename?filename=Agricultural+Biotechnology+Annual_Pretoria_South+Africa+-+Republic+of_2-5-2019.pdf
+South Africa,Maize (GM share),94%,Share of maize plantings (2017/2018).,https://apps.fas.usda.gov/newgainapi/api/report/downloadreportbyfilename?filename=Agricultural+Biotechnology+Annual_Pretoria_South+Africa+-+Republic+of_2-5-2019.pdf
+South Africa,Soybean (GM share),95%,Share of soybean plantings (2017/2018).,https://apps.fas.usda.gov/newgainapi/api/report/downloadreportbyfilename?filename=Agricultural+Biotechnology+Annual_Pretoria_South+Africa+-+Republic+of_2-5-2019.pdf
+Spain,Maize (MON810),~25-35%,Spain is the only EU country with significant GM maize cultivation; adoption varies by year.,https://cordis.europa.eu/article/id/418015-gmo-cultivation-in-europe
+United States,Cotton (GM share),96%,USDA 2020s reports ~96% GM cotton.,https://usda.library.cornell.edu/concern/publications/ft848q715
+United States,Maize (GM share),92%,USDA 2020s reports ~92% GM maize.,https://usda.library.cornell.edu/concern/publications/ft848q715
+United States,Papaya (Rainbow adoption),80%,Most Hawaiian papaya is Rainbow or SunUp GM varieties.,https://www.isaaa.org/resources/publications/briefs/44/executivesummary/default.asp
+United States,Soybean (GM share),94%,USDA 2020s reports ~94% GM soybean.,https://usda.library.cornell.edu/concern/publications/ft848q715
+United States,Sugar beet (GM share),95%,Nearly all US sugar beet GM by 2010s.,https://www.aphis.usda.gov/biotechnology/downloads/reg_lofsugarbeet.pdf
+Uruguay,Maize (GM share),High,GM maize events approved and cultivated.,https://voyager.fas.usda.gov/voyager/navigo/show?disp=default&id=8b5853e7-79a2-59ee-a6aa-2a5e6d03e354
+Uruguay,Soybean (GM share),High,GM soybean widely grown.,https://apps.fas.usda.gov/newgainapi/api/report/downloadreportbyfilename?filename=agricultural+biotechnology+annual_buenos+aires_uruguay_7-2-2012.pdf
+Vietnam,GE corn area,≥100k ha (2020); ~220k ha (2023 est.),Industry estimates and USDA GAIN reports show strong growth tied to FAW pressure.,https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Agricultural+Biotechnology+Annual_Hanoi_Vietnam_VM2022-0073.pdf; https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Agricultural+Biotechnology+Annual_Hanoi_Vietnam_VM2023-0059

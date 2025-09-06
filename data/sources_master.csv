@@ -1,0 +1,13 @@
+source_name,type,country_scope,url,notes
+ISAAA Crop Biotech Update,tracker,global,https://www.isaaa.org/kc/cropbiotechupdate/,"News of approvals; cite specific article pages"
+USDA GAIN Reports,government,global,https://apps.fas.usda.gov/newgainapi/api/,"Country biotech annuals; very detailed"
+Cartagena BCH (CBD),registry,global,https://bch.cbd.int/,"Official biosafety submissions by parties"
+EFSA & EU Register,government,EU,https://open.efsa.europa.eu/; https://ec.europa.eu/food/plants/gmo/eu-register_en,"Risk opinions, approvals"
+Health Canada & CFIA,government,Canada,https://www.canada.ca/,"Decisions on novel foods/plants"
+US FDA/USDA/EPA,government,USA,https://www.fda.gov/; https://www.aphis.usda.gov/; https://www.epa.gov/,"Division of oversight"
+CTNBio,government,Brazil,https://www.gov.br/mcti/pt-br/assuntos/ctnbio,"Approvals list"
+CONABIA,government,Argentina,https://www.magyp.gob.ar/,"Approvals & risk assessments"
+NBMA,government,Nigeria,https://nbma.gov.ng/,"Biosafety decisions"
+DAFF/DTIC (Dept. Agriculture),government,South Africa,https://www.dalrrd.gov.za/,"GMO permits/approvals"
+Philippines DA-BPI,government,Philippines,https://www.bpi.da.gov.ph/,"GMO approvals"
+Food Standards Australia NZ (FSANZ),government,Australia/NZ,https://www.foodstandards.gov.au/,"GM food approvals"
