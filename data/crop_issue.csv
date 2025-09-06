@@ -1,0 +1,20 @@
+crop,issue_type,description,country,year,source
+maize,contamination,StarLink corn recall over allergenicity concern,USA,2000,https://www.cdc.gov/mmwr/preview/mmwrhtml/mm5042a1.htm
+rice,contamination,LL601 GM rice contamination of exports,USA/EU,2006,https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1892825/
+soy,allergen_transfer,Brazil nut allergen transferred into soy (not commercialized),USA,1996,https://pubmed.ncbi.nlm.nih.gov/8598523/
+maize|soy,chemical,Glyphosate herbicide debate (IARC Group 2A),Global,2015,https://www.iarc.who.int/wp-content/uploads/2018/07/pr236_E.pdf
+maize,contamination,"Syngenta Bt10 GM maize mislabeled as Bt11; EU required testing of US corn gluten feed and brewers’ grain",USA/EU,2005,https://eur-lex.europa.eu/LexUriServ/LexUriServ.do?uri=OJ:L:2005:101:0014:0016:EN:PDF
+maize,trade_disruption,"China rejected U.S. corn shipments containing MIR162 (Viptera), causing trade disruptions",China,2013,https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=CH13063_0.pdf
+wheat,contamination,"Unapproved GM wheat (MON71800) detected in Oregon; Japan and South Korea temporarily suspended imports",USA,2013,https://crsreports.congress.gov/product/pdf/r/r43100
+flax,contamination,"Triffid GM flax detected in EU supply chains; Canadian exports disrupted",Canada/EU,2009,https://www.reuters.com/article/us-flax-gm-eu-idUSTRE58H41V20090918
+canola,environmental_gene_flow,"Feral GM canola populations with stacked herbicide tolerance found along U.S. roadsides",USA,2011,https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025758
+canola,environmental_gene_flow,"Feral GM oilseed rape detected near Japanese ports; imported seed spillage and gene flow noted",Japan,2005,https://link.springer.com/article/10.1007/s11284-005-0031-2
+rice,contamination,"EU adopted emergency measures to prevent unauthorized GM rice (e.g., Bt63) from China",China/EU,2008,https://gmo-crl.jrc.ec.europa.eu/Bt63update
+soy|cotton,herbicide_drift,"Off-target dicamba damage widely reported on non-resistant crops; regulatory changes and court vacatur followed",USA,2018,https://downloads.regulations.gov/EPA-HQ-OPP-2020-0492-0003/content.pdf
+creeping_bentgrass,environmental_escape,"Glyphosate-resistant creeping bentgrass escaped field trials; persistent feral populations and gene flow documented",USA,2007,https://downloads.regulations.gov/APHIS-2015-0096-0326/attachment_138.pdf
+maize,insect_resistance,"Field-evolved resistance by western corn rootworm to Bt Cry3Bb1 maize documented in the U.S. Midwest",USA,2011,https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0022629
+soy,legal,"U.S. Supreme Court upheld patents on self-replicating GM seeds in Bowman v. Monsanto",USA,2013,https://supreme.justia.com/cases/federal/us/569/278/
+canola,legal,"Canadian Supreme Court ruled on GM canola patent infringement in Monsanto Canada Inc. v. Schmeiser",Canada,2004,https://decisions.scc-csc.ca/scc-csc/scc-csc/en/item/2147/index.do
+wheat,contamination,"Unapproved GM wheat detected in Alberta; Japan temporarily suspended imports",Canada,2018,https://inspection.canada.ca/en/plant-varieties/plants-novel-traits/general-public/wheat-detection-2018/incident-report
+maize|soy,weed_resistance,"Spread of glyphosate-resistant weeds reduced effectiveness and increased costs in herbicide-tolerant cropping systems",USA,2016,https://nap.nationalacademies.org/catalog/23395/genetically-engineered-crops-experiences-and-prospects
+cotton,insect_resistance,"Field-evolved resistance of pink bollworm to Bt cotton (Cry1Ac/Cry2Ab) reported in India",India,2018,https://onlinelibrary.wiley.com/doi/10.1002/ps.5038
