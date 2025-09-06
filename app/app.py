@@ -74,8 +74,43 @@ crop_issues = (pd.read_csv(DATA / "crop_issue.csv") if (DATA / "crop_issue.csv")
 
 # --- Page title ---
 st.set_page_config(page_title="Krop Explorer", layout="wide")
-st.title("Krop 🌾 — GMO Explorer")
+st.title("Krop 🌾 — GMO Explorer (Beta)")
 st.caption("Click a country to see stance, bans, approvals, studies, incidents. All rows link to sources.")
+
+# Fun visual: toggleable falling crops animation
+st.sidebar.checkbox("🌽 Falling crops animation", True, key="fx_crops")
+if st.session_state.get("fx_crops", True):
+    st.markdown(
+        """
+        <style>
+        /* Falling crops CSS */
+        .krop-fall { pointer-events: none; position: fixed; top: -10vh; left: 0; width: 100%; height: 0; z-index: 9999; }
+        .krop-fall span { position: fixed; top: -10vh; font-size: 28px; opacity: 0.95; animation-name: kropDrop; animation-timing-function: linear; animation-iteration-count: infinite; }
+        @keyframes kropDrop {
+          0%   { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+          10%  { opacity: 0.95; }
+          100% { transform: translateY(110vh) rotate(360deg); opacity: 0.95; }
+        }
+        </style>
+        <div class="krop-fall">
+          <span style="left: 5%;  animation-duration: 9s;  animation-delay: 0s;">🌽</span>
+          <span style="left: 12%; animation-duration: 12s; animation-delay: 2s;">🌾</span>
+          <span style="left: 18%; animation-duration: 10s; animation-delay: 1s;">🫘</span>
+          <span style="left: 25%; animation-duration: 11s; animation-delay: 3s;">🥔</span>
+          <span style="left: 33%; animation-duration: 8s;  animation-delay: 1.5s;">🍚</span>
+          <span style="left: 40%; animation-duration: 13s; animation-delay: 0.5s;">🌽</span>
+          <span style="left: 47%; animation-duration: 9.5s;animation-delay: 2.5s;">🌾</span>
+          <span style="left: 54%; animation-duration: 12.5s;animation-delay: 1.2s;">🫘</span>
+          <span style="left: 61%; animation-duration: 10.5s;animation-delay: 0.8s;">🥔</span>
+          <span style="left: 68%; animation-duration: 9s;  animation-delay: 2.2s;">🍚</span>
+          <span style="left: 75%; animation-duration: 11.5s;animation-delay: 1.8s;">🌽</span>
+          <span style="left: 82%; animation-duration: 12s; animation-delay: 2.8s;">🌾</span>
+          <span style="left: 89%; animation-duration: 10s; animation-delay: 1.1s;">🫘</span>
+          <span style="left: 94%; animation-duration: 13.5s;animation-delay: 0.3s;">🥔</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # --- Sidebar filters ---
 st.sidebar.header("Filters")
