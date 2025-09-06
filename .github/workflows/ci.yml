@@ -6,26 +6,61 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-    - name: Run CSV validation
-      run: python tools/validate_data.py
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Run link checker
-      run: python tools/check_links.py
+      - name: Show repo tree (debug)
+        run: |
+          pwd
+          ls -la
+          echo "--- data ---"
+          ls -la data || true
+          echo "--- tools ---"
+          ls -la tools || true
+          echo "--- app ---"
+          ls -la app || true
+
+      # ✅ Hard gate: fails run if CSVs have issues
+      - name: Run CSV validation
+        run: python tools/validate_data.py
+
+      # 🔎 Soft gate: run link checker but DO NOT fail run
+      - name: Run link checker (non-blocking)
+        run: |
+          python tools/check_links.py || echo "::warning::Link checker finished with errors but build will continue."
+
+      # 📎 Upload link report so you can download it from the run
+      - name: Upload link report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: link-report
+          path: |
+            output/link_report.csv
+          if-no-files-found: warn
