@@ -7,6 +7,26 @@ import plotly.express as px
 from pathlib import Path
 import re
 
+# --- robust CSV reader: tolerate extra commas in notes so every row has 6 fields ---
+def read_mapping_loose(path: Path):
+    import csv
+    rows = []
+    with open(path, "r", encoding="utf-8") as f:
+        r = csv.reader(f)
+        header = next(r, None)
+        for i, row in enumerate(r, start=2):  # header is line 1
+            if not row:
+                continue
+            # Ensure exactly 6 fields: food,crop,use,country_or_region,notes,source
+            if len(row) < 6:
+                # skip malformed short rows
+                continue
+            if len(row) > 6:
+                # merge middle cells into the notes column
+                row = [row[0], row[1], row[2], row[3], ",".join(row[4:-1]), row[-1]]
+            rows.append(row)
+    return pd.DataFrame(rows, columns=["food","crop","use","country_or_region","notes","source"])
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
@@ -40,13 +60,13 @@ _mapping_diet = DATA / "mapping_diet.csv"
 _mapping_legacy = DATA / "mapping.csv"
 mapping_name = None
 if _mapping_diet.exists():
-    mapping = pd.read_csv(_mapping_diet)
+    mapping = read_mapping_loose(_mapping_diet)
     mapping_name = "mapping_diet.csv"
 elif _mapping_legacy.exists():
-    mapping = pd.read_csv(_mapping_legacy)
+    mapping = read_mapping_loose(_mapping_legacy)
     mapping_name = "mapping.csv"
 else:
-    mapping = pd.DataFrame()
+    mapping = pd.DataFrame(columns=["food","crop","use","country_or_region","notes","source"])
     mapping_name = "none"
 
 # Optional: global issues library (crop_issue.csv)
@@ -266,13 +286,17 @@ CURATED_NG = [
     ("Ogi / pap (akamu)", "maize"),
     ("Moi-moi (steamed bean pudding)", "cowpea"),
     ("Akara (bean fritter)", "cowpea"),
-    ("Jollof rice (with vegetable oil)", "soy|cottonseed|maize"),
-    ("Fried rice (with chicken)", "maize|soy"),
-    ("Chicken (meat)", "maize|soy"),
-    ("Eggs", "maize|soy"),
-    ("Soy milk / soybean beverage", "soy"),
-    ("Tofu / soy-based foods", "soy"),
+    ("Jollof rice (with vegetable oil)", "rice|soy|cottonseed|palm"),
+    ("Fried rice (with chicken)", "rice|maize|soy"),
+    ("Chicken stew", "maize|soy"),
+    ("Egg omelette", "maize|soy"),
+    ("Tomato stew (with vegetable oil)", "soy|cottonseed|palm"),
+    ("Indomie noodles (with seasoning oil)", "wheat|soy|palm"),
     ("Suya (spiced beef)", "maize|soy"),
+    ("Eba (cassava fufu)", "cassava"),
+    ("Garri (cassava granules)", "cassava"),
+    ("Yam porridge (with vegetable oil)", "soy|cottonseed|palm"),
+    ("Meat pie (with filling)", "maize|soy"),
 ]
 
 st.markdown("### Export")
@@ -398,11 +422,26 @@ else:
                 if st.checkbox(food, key=f"food_chk_{i}"):
                     selected_foods.append(food)
 
+        # List of meals treated as human-only (curated for Nigeria)
+        HUMAN_ONLY_MEALS = [
+            "ogi / pap (akamu)",
+            "moi-moi (steamed bean pudding)",
+            "akara (bean fritter)",
+            "jollof rice (with vegetable oil)",
+            "tomato stew (with vegetable oil)",
+            "indomie noodles (with seasoning oil)",
+            "eba (cassava fufu)",
+            "garri (cassava granules)",
+            "yam porridge (with vegetable oil)",
+            "meat pie (with filling)",
+            "egg omelette",
+        ]
+
         if selected_foods:
             # Aggregate crops across all selected foods (for quick export/evidence pulls)
             if use_curated:
                 crops_sel = sorted({c for f in selected_foods for c in re.split(r"[|,]", meal_to_crops.get(f, "")) if c})
-                sel = pd.DataFrame([{"food": f, "crop": c.strip(), "use": ("human" if f.lower() in ["ogi / pap (akamu)","soy milk / soybean beverage","tofu / soy-based foods","moi-moi (steamed bean pudding)","akara (bean fritter)","jollof rice (with vegetable oil)"] else "human|animal"), "where": "Nigeria", "source": ""} for f in selected_foods for c in re.split(r"[|,]", meal_to_crops.get(f, "")) if c.strip()])
+                sel = pd.DataFrame([{"food": f, "crop": c.strip(), "use": ("human" if f.lower() in HUMAN_ONLY_MEALS else "human|animal"), "where": "Nigeria", "source": ""} for f in selected_foods for c in re.split(r"[|,]", meal_to_crops.get(f, "")) if c.strip()])
             else:
                 sel = country_map[country_map["food"].isin(selected_foods)].copy()
                 crops_sel = sel["crop"].dropna().str.lower().unique().tolist()
@@ -413,7 +452,7 @@ else:
             for f in selected_foods:
                 if use_curated:
                     crops_for_food = [c.strip() for c in re.split(r"[|,]", meal_to_crops.get(f, "")) if c.strip()]
-                    use_kinds = ("human" if f.lower() in ["ogi / pap (akamu)","soy milk / soybean beverage","tofu / soy-based foods","moi-moi (steamed bean pudding)","akara (bean fritter)","jollof rice (with vegetable oil)"] else "human|animal")
+                    use_kinds = ("human" if f.lower() in HUMAN_ONLY_MEALS else "human|animal")
                     srcs = []
                 else:
                     block = sel[sel["food"]==f]
@@ -487,7 +526,7 @@ else:
                             "country": pick,
                             "food": f,
                             "crop": c,
-                            "use": ("human" if f.lower() in ["ogi / pap (akamu)","soy milk / soybean beverage","tofu / soy-based foods","moi-moi (steamed bean pudding)","akara (bean fritter)","jollof rice (with vegetable oil)"] else "human|animal"),
+                            "use": ("human" if f.lower() in HUMAN_ONLY_MEALS else "human|animal"),
                             "confidence": confidence_from_counts(counts),
                             "mapping_where": pick,
                             "mapping_source": "",
