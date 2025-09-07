@@ -589,3 +589,15 @@ else:
             download_df_button(report_df, "Download diet analysis", f"{pick}_diet_prediction.csv")
         else:
             st.caption("Tick at least one meal to see mapped crops and evidence.")
+
+# --- Tiny footer credit ---
+st.markdown(
+    """
+    <style>
+    .krop-footer{position:fixed;left:0;bottom:0;width:100%;text-align:center;font-size:12px;color:#6b7280;padding:6px 0;background:rgba(255,255,255,0.7);backdrop-filter:blur(4px);z-index:10000;}
+    @media (max-width: 768px){ .krop-footer{font-size:11px;} }
+    </style>
+    <div class="krop-footer">Created by <strong>Ark Studios</strong> / <strong>KYN Studios</strong></div>
+    """,
+    unsafe_allow_html=True,
+)
