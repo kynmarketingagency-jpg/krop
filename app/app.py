@@ -7,6 +7,108 @@ import plotly.express as px
 from pathlib import Path
 import re
 
+# --- Visual assets path and background injector ---
+import os, base64
+ROOT = Path(__file__).resolve().parents[1]
+ASSETS = ROOT / "assets"
+
+def add_static_graffiti_bg(image_path):
+    """
+    Set a fixed graffiti-style background using CSS. The image is read and inlined as Base64 so
+    it works on Streamlit Cloud without extra static hosting.
+    """
+    try:
+        p = Path(image_path)
+        if not p.exists():
+            # Try assets folder relative to repo root
+            p = ASSETS / str(image_path)
+        if not p.exists():
+            st.warning(f"Background not found: {image_path}")
+            return
+        with open(p, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode()
+        st.markdown(
+            f"""
+            <style>
+            .stApp {{
+                background-image: url("data:image/png;base64,{b64}");
+                background-size: cover;
+                background-position: center;
+                background-attachment: fixed;
+                background-repeat: no-repeat;
+            }}
+            .stApp::before {{
+                content: "";
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.35); /* keep content readable */
+                pointer-events: none;
+                z-index: 0;
+            }}
+            .block-container {{ position: relative; z-index: 1; }}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+    except Exception as e:
+        st.warning(f"Couldn't set background: {e}")
+
+# --- Vector line-art background (urban hieroglyphic vibe) ---
+def add_urban_hiero_bg():
+    """
+    Inject a lightweight, repeating SVG pattern as a background.
+    This avoids heavy image files and keeps lines crisp at any screen size.
+    The pattern is monochrome (off-white lines on near-black) so content stays readable.
+    """
+    svg = (
+        "<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'>"
+        "<rect width='100%' height='100%' fill='black'/>"
+        # grid of thin lines (subtle urban texture)
+        "<g stroke='white' stroke-opacity='0.12' stroke-width='1'>"
+        "<path d='M0 20 H220 M0 60 H220 M0 100 H220 M0 140 H220 M0 180 H220'/>"
+        "<path d='M20 0 V220 M60 0 V220 M100 0 V220 M140 0 V220 M180 0 V220'/>"
+        "</g>"
+        # line-style hieroglyphic/urban icons (no fills, only strokes)
+        "<g stroke='white' stroke-opacity='0.55' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'>"
+        # ankh-like symbol
+        "<path d='M35 45 c0 -10 8 -18 18 -18 s18 8 18 18 c0 18 -36 18 -36 0 M53 45 V80'/>"
+        # eye motif
+        "<path d='M145 55 q-25 0 -45 18 q20 18 45 18 q25 0 45 -18 q-20 -18 -45 -18 z M145 73 a4 4 0 1 0 0.1 0'/>"
+        # seated figure (abstract line style)
+        "<path d='M30 150 q10 -20 30 -10 q18 8 18 26 v22 h-48 z M51 150 v-10 q0 -10 10 -10 h10'/>"
+        # bird-outline glyph
+        "<path d='M160 140 q20 -15 35 -5 q12 8 5 20 q-10 18 -40 10 q-10 15 -25 15 q15 -15 10 -25 q5 -5 15 -15 z'/>"
+        # zigzag/lightning motif
+        "<path d='M95 120 l20 -20 l-12 0 l18 -18 l-12 0 l20 -20'/>"
+        # sun rays motif
+        "<path d='M110 30 a12 12 0 1 1 0.1 0 M110 10 V0 M110 60 V50 M90 30 H80 M140 30 H130 M95 15 L88 8 M132 52 l-7 -7 M88 52 l7 -7 M132 8 l-7 7'/>"
+        "</g>"
+        "</svg>"
+    )
+    import base64
+    b64 = base64.b64encode(svg.encode('utf-8')).decode()
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/svg+xml;base64,{b64}");
+            background-size: 420px 420px;   /* pattern scale */
+            background-color: #000;         /* fallback */
+            background-attachment: fixed;
+        }}
+        .stApp::before {{
+            content: "";
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.25);   /* soften contrast for readability */
+            pointer-events: none; z-index: 0;
+        }}
+        .block-container {{ position: relative; z-index: 1; }}
+        .stApp, .stApp * {{ color: #f5f5f5; }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 # --- robust CSV reader: tolerate extra commas in notes so every row has 6 fields ---
 def read_mapping_loose(path: Path):
     import csv
@@ -28,7 +130,6 @@ def read_mapping_loose(path: Path):
     return pd.DataFrame(rows, columns=["food","crop","use","country_or_region","notes","source"])
 
 
-ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 
 # --- Load data (CSV "bookshelves") ---
@@ -77,41 +178,9 @@ st.set_page_config(page_title="Krop Explorer", layout="wide")
 st.title("Krop 🌾 — GMO Explorer (Beta)")
 st.caption("Click a country to see stance, bans, approvals, studies, incidents. All rows link to sources.")
 
-# Fun visual: toggleable falling crops animation
-st.sidebar.checkbox("🌽 Falling crops animation", True, key="fx_crops")
-if st.session_state.get("fx_crops", True):
-    st.markdown(
-        """
-        <style>
-        /* Falling crops CSS */
-        .krop-fall { pointer-events: none; position: fixed; top: -10vh; left: 0; width: 100%; height: 0; z-index: 9999; }
-        .krop-fall span { position: fixed; top: -10vh; font-size: 28px; opacity: 0.95; animation-name: kropDrop; animation-timing-function: linear; animation-iteration-count: infinite; }
-        @keyframes kropDrop {
-          0%   { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
-          10%  { opacity: 0.95; }
-          100% { transform: translateY(110vh) rotate(360deg); opacity: 0.95; }
-        }
-        </style>
-        <div class="krop-fall">
-          <span style="left: 5%;  animation-duration: 9s;  animation-delay: 0s;">🌽</span>
-          <span style="left: 12%; animation-duration: 12s; animation-delay: 2s;">🌾</span>
-          <span style="left: 18%; animation-duration: 10s; animation-delay: 1s;">🫘</span>
-          <span style="left: 25%; animation-duration: 11s; animation-delay: 3s;">🥔</span>
-          <span style="left: 33%; animation-duration: 8s;  animation-delay: 1.5s;">🍚</span>
-          <span style="left: 40%; animation-duration: 13s; animation-delay: 0.5s;">🌽</span>
-          <span style="left: 47%; animation-duration: 9.5s;animation-delay: 2.5s;">🌾</span>
-          <span style="left: 54%; animation-duration: 12.5s;animation-delay: 1.2s;">🫘</span>
-          <span style="left: 61%; animation-duration: 10.5s;animation-delay: 0.8s;">🥔</span>
-          <span style="left: 68%; animation-duration: 9s;  animation-delay: 2.2s;">🍚</span>
-          <span style="left: 75%; animation-duration: 11.5s;animation-delay: 1.8s;">🌽</span>
-          <span style="left: 82%; animation-duration: 12s; animation-delay: 2.8s;">🌾</span>
-          <span style="left: 89%; animation-duration: 10s; animation-delay: 1.1s;">🫘</span>
-          <span style="left: 94%; animation-duration: 13.5s;animation-delay: 0.3s;">🥔</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+# --- Visual style (fixed) ---
+# Temporarily lock the app to the Urban hieroglyphic line background and hide style options
+add_urban_hiero_bg()
 # --- Sidebar filters ---
 st.sidebar.header("Filters")
 region = st.sidebar.selectbox("Region", ["All"] + sorted(countries["region"].dropna().unique().tolist()))
